@@ -1,5 +1,6 @@
 using System.IO;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -40,10 +41,20 @@ namespace Lesson.EditorTools
             net.NetworkConfig.ConnectionApproval = true; // 접속 승인 콜백 사용
             net.NetworkConfig.TickRate = 30;             // 1초에 30번 상태를 주고받음
 
+            // ── [2장] 플레이어 프리팹: 접속이 승인되면 서버가 클라이언트마다 하나씩 만들어 준다.
+            Directory.CreateDirectory(Root + "/Prefabs");
+            net.NetworkConfig.PlayerPrefab = CreatePlayerPrefab();
+
+            // 네트워크로 만들 수 있는 프리팹 목록. 서버와 클라이언트가 "같은 목록"을 가져야 한다.
+            var prefabList = AssetDatabase.LoadAssetAtPath<NetworkPrefabsList>("Assets/DefaultNetworkPrefabs.asset");
+            net.NetworkConfig.Prefabs.NetworkPrefabsLists.Clear();
+            net.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(prefabList);
+
             // ── 접속 화면
             var hud = new GameObject("ConnectionHud");
             hud.AddComponent<ConnectionHud>();
             hud.AddComponent<CommandLineStarter>();
+            hud.AddComponent<SpawnedObjectsReport>();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -55,6 +66,42 @@ namespace Lesson.EditorTools
             PlayerSettings.defaultScreenHeight = 640;
             AssetDatabase.SaveAssets();
             Debug.Log("[Lesson] 씬 생성 완료: " + ScenePath);
+        }
+
+        static GameObject CreatePlayerPrefab()
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            go.name = "Player";
+
+            // 바라보는 방향 표시용 "코"
+            var nose = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Object.DestroyImmediate(nose.GetComponent<Collider>());
+            nose.name = "Nose";
+            nose.transform.SetParent(go.transform);
+            nose.transform.localPosition = new Vector3(0, 0.5f, 0.5f);
+            nose.transform.localScale = new Vector3(0.3f, 0.2f, 0.4f);
+
+            go.AddComponent<NetworkObject>(); // "이 오브젝트는 네트워크에 존재한다"는 신분증 (고유 번호 NetworkObjectId)
+
+            var nt = go.AddComponent<NetworkTransform>();
+            nt.AuthorityMode = NetworkTransform.AuthorityModes.Server; // 서버가 옮긴 위치만 퍼뜨린다
+            // 필요한 축만 보낸다 → 패킷 크기 절약. 바닥 위를 걷는 게임이라 높이·기울기·크기는 안 변한다.
+            nt.SyncPositionY = false;
+            nt.SyncRotAngleX = false;
+            nt.SyncRotAngleZ = false;
+            nt.SyncScaleX = nt.SyncScaleY = nt.SyncScaleZ = false;
+
+            go.AddComponent<PlayerMovement>();
+            go.AddComponent<PlayerLabel>();
+            return SavePrefab(go, "Player");
+        }
+
+        static GameObject SavePrefab(GameObject go, string name)
+        {
+            string path = $"{Root}/Prefabs/{name}.prefab";
+            var prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
+            Object.DestroyImmediate(go);
+            return prefab;
         }
 
         /// <summary>배치 모드용: 씬을 만들고 Windows 실행 파일까지 빌드합니다.</summary>

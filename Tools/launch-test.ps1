@@ -6,7 +6,8 @@ param(
     [int]$Clients = 2,
     [int]$Seconds = 0,          # 0 이면 자동 종료하지 않음
     [string]$Mode = "server",   # server | host
-    [switch]$Headless
+    [switch]$Headless,
+    [switch]$Bot                # 클라이언트를 자동 입력(-bot)으로 움직이고, 모두 -report 로 오브젝트 위치를 기록
 )
 $project = Split-Path $PSScriptRoot -Parent
 $exe = Join-Path $project "Builds\Win\UnityNetworkLesson.exe"
@@ -18,6 +19,7 @@ function Launch([string[]]$extra, [string]$name, [int]$quit) {
     $a = @('-port', '7777', '-logFile', (Join-Path $logs "$name.log")) + $extra
     if ($Headless) { $a += @('-batchmode', '-nographics') }
     if ($quit -gt 0) { $a += @('-quitAfter', "$quit") }
+    if ($Bot) { $a += @('-report'); if ($name -ne 'server') { $a += @('-bot') } }
     Start-Process $exe -ArgumentList $a -PassThru
 }
 
