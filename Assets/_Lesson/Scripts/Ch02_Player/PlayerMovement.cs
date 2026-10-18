@@ -12,6 +12,9 @@ namespace Lesson
     ///
     /// 클라이언트가 위치를 마음대로 정할 수 없으므로 "순간이동 핵"이 통하지 않습니다.
     /// 대신 내 캐릭터도 서버를 한 번 왕복한 뒤에 움직이므로, 지연이 크면 조작이 굼떠집니다. → 5장에서 해결
+    ///
+    /// ※ 5장부터 플레이어 프리팹은 이 컴포넌트 대신 PredictedMovement 를 씁니다.
+    ///   이 파일은 2장 설명용으로 남겨 두며, 아래 정적 함수(SpawnPoint, ColorFor, ArenaHalfSize)는 계속 쓰입니다.
     /// </summary>
     public class PlayerMovement : NetworkBehaviour
     {

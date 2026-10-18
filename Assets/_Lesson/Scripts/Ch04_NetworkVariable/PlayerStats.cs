@@ -1,7 +1,6 @@
 using System.Collections;
 using Unity.Collections;
 using Unity.Netcode;
-using Unity.Netcode.Components;
 using UnityEngine;
 
 namespace Lesson
@@ -89,8 +88,9 @@ namespace Lesson
         IEnumerator Respawn()
         {
             yield return new WaitForSeconds(respawnDelay);
-            // Teleport: 보간 없이 "순간이동"으로 보내라는 표시. 그냥 position 을 바꾸면 맵을 가로질러 미끄러져 보인다.
-            GetComponent<NetworkTransform>().Teleport(PlayerMovement.SpawnPoint(OwnerClientId), Quaternion.identity, transform.localScale);
+            // 순간이동: 보간하지 말고 바로 옮기라는 표시를 같이 보낸다. 그냥 위치만 바꾸면 맵을 가로질러 미끄러져 보인다.
+            // (4장에서는 NetworkTransform.Teleport, 5장부터는 직접 만든 PredictedMovement 의 순간이동을 쓴다)
+            GetComponent<PredictedMovement>().ServerTeleport(PlayerMovement.SpawnPoint(OwnerClientId));
             Health.Value = MaxHealth;
             IsDead.Value = false;
         }

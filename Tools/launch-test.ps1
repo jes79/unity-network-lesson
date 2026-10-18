@@ -8,7 +8,8 @@ param(
     [string]$Mode = "server",   # server | host
     [switch]$Headless,
     [switch]$Bot,               # 클라이언트를 자동 입력(-bot)으로 움직이고, 모두 -report 로 오브젝트 위치를 기록
-    [int]$LateJoinAfter = 0     # N초 뒤에 클라이언트 하나를 더 접속 (4장: 늦게 들어온 사람이 무엇을 받는지 확인)
+    [int]$LateJoinAfter = 0,    # N초 뒤에 클라이언트 하나를 더 접속 (4장: 늦게 들어온 사람이 무엇을 받는지 확인)
+    [string]$ClientArgs = ""    # 클라이언트에만 붙일 옵션. 예: "-lag 100 -loss 5 -noReconcile" (5장)
 )
 $project = Split-Path $PSScriptRoot -Parent
 $exe = Join-Path $project "Builds\Win\UnityNetworkLesson.exe"
@@ -21,6 +22,7 @@ function Launch([string[]]$extra, [string]$name, [int]$quit) {
     if ($Headless) { $a += @('-batchmode', '-nographics') }
     if ($quit -gt 0) { $a += @('-quitAfter', "$quit") }
     if ($Bot) { $a += @('-report'); if ($name -ne 'server') { $a += @('-bot') } }
+    if ($name -ne 'server' -and $ClientArgs) { $a += ($ClientArgs -split '\s+') }
     Start-Process $exe -ArgumentList $a -PassThru
 }
 

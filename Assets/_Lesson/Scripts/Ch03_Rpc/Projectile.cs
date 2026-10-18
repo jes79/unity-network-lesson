@@ -1,4 +1,5 @@
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEngine;
 
 namespace Lesson
@@ -16,6 +17,9 @@ namespace Lesson
         /// <summary>누가 쐈는지 (서버에서만 사용 — 자기 총알에 맞지 않게)</summary>
         public ulong ShooterClientId;
         float m_Age;
+
+        // 5장: 지연 실험실의 "보간" 스위치를 총알에도 적용 (NetworkTransform 의 보간은 받는 쪽에서 켜고 끈다)
+        public override void OnNetworkSpawn() => GetComponent<NetworkTransform>().Interpolate = LatencyLab.Interpolation;
 
         void Update()
         {

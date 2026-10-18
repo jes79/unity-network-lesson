@@ -1,4 +1,5 @@
 using System.IO;
+using Unity.Multiplayer.Tools.NetworkSimulator.Runtime;
 using Unity.Netcode;
 using Unity.Netcode.Components;
 using Unity.Netcode.Transports.UTP;
@@ -40,6 +41,13 @@ namespace Lesson.EditorTools
             net.NetworkConfig.NetworkTransport = transport;
             net.NetworkConfig.ConnectionApproval = true; // 접속 승인 콜백 사용
             net.NetworkConfig.TickRate = 30;             // 1초에 30번 상태를 주고받음
+
+            // ── [5장] 지연 실험실: Network Simulator 가 UnityTransport 에 일부러 지연/손실을 넣는다.
+            var simulator = netGo.AddComponent<NetworkSimulator>();
+            var lab = netGo.AddComponent<LatencyLab>();
+            var labSo = new SerializedObject(lab);
+            labSo.FindProperty("simulator").objectReferenceValue = simulator;
+            labSo.ApplyModifiedPropertiesWithoutUndo();
 
             // ── [2장] 플레이어 프리팹: 접속이 승인되면 서버가 클라이언트마다 하나씩 만들어 준다.
             Directory.CreateDirectory(Root + "/Prefabs");
@@ -109,15 +117,15 @@ namespace Lesson.EditorTools
 
             go.AddComponent<NetworkObject>(); // "이 오브젝트는 네트워크에 존재한다"는 신분증 (고유 번호 NetworkObjectId)
 
-            var nt = go.AddComponent<NetworkTransform>();
-            nt.AuthorityMode = NetworkTransform.AuthorityModes.Server; // 서버가 옮긴 위치만 퍼뜨린다
-            // 필요한 축만 보낸다 → 패킷 크기 절약. 바닥 위를 걷는 게임이라 높이·기울기·크기는 안 변한다.
-            nt.SyncPositionY = false;
-            nt.SyncRotAngleX = false;
-            nt.SyncRotAngleZ = false;
-            nt.SyncScaleX = nt.SyncScaleY = nt.SyncScaleZ = false;
+            // [2장~4장] 이동 = PlayerMovement(서버 권한) + NetworkTransform(위치 복사)
+            //   var nt = go.AddComponent<NetworkTransform>();
+            //   nt.AuthorityMode = NetworkTransform.AuthorityModes.Server;
+            //   nt.SyncPositionY = false; nt.SyncRotAngleX = false; nt.SyncRotAngleZ = false;
+            //   nt.SyncScaleX = nt.SyncScaleY = nt.SyncScaleZ = false;
+            //   go.AddComponent<PlayerMovement>();
+            // [5장~] 이동 = PredictedMovement (예측 + 보정 + 보간을 직접 구현, 위치는 NetworkVariable 로 전송)
+            go.AddComponent<PredictedMovement>();
 
-            go.AddComponent<PlayerMovement>();
             go.AddComponent<PlayerLabel>();
             go.AddComponent<PlayerStats>(); // [4장]
 
