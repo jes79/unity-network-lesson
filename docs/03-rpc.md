@@ -39,7 +39,7 @@ sequenceDiagram
         S-->>A: 총알 위치 (NetworkTransform)
         S-->>B: 총알 위치
     end
-    Note over S: OnTriggerEnter: 영희에게 명중!<br/>(판정은 서버만)
+    Note over S: 경로 검사(SphereCast): 영희에게 명중!<br/>(판정은 서버만)
     S-->>A: PlayHitEffectRpc → 영희 깜빡
     S-->>B: PlayHitEffectRpc → 영희 깜빡
     S-->>A: 총알 Despawn
@@ -97,17 +97,34 @@ void FireRpc()
 ### Projectile.cs — 서버만 움직이고 판정
 
 ```csharp
-void OnTriggerEnter(Collider other)
+void Update()
 {
-    if (!IsServer || !IsSpawned) return;   // 판정은 서버만
-    if (!other.TryGetComponent<PlayerCombat>(out var target)) return;
-    if (target.OwnerClientId == ShooterClientId) return;
+    if (!IsServer || !IsSpawned) return;   // 움직임과 판정은 서버만
+    float step = speed * Time.deltaTime;
+    // 이번 프레임에 지나갈 길 전체를 검사 (sweep)
+    var hits = Physics.SphereCastAll(transform.position, Radius, transform.forward, step, ~0, QueryTriggerInteraction.Ignore);
+    ... 가장 가까운, 쏜 사람이 아닌 PlayerCombat 을 찾으면 Hit(target)
+    transform.position += transform.forward * step;
+}
+
+void Hit(PlayerCombat target)
+{
     target.PlayHitEffectRpc();             // 사건을 모두에게 알림
     NetworkObject.Despawn();
 }
 ```
 
-충돌 자체는 클라이언트에서도 일어나지만 `!IsServer` 면 아무것도 하지 않습니다. 같은 코드가 모든 프로그램에서 돌기 때문에, **"이 줄은 누가 실행해야 하나?"** 를 항상 `IsServer` / `IsOwner` 로 구분합니다.
+- 같은 코드가 모든 프로그램에서 돌기 때문에, **"이 줄은 누가 실행해야 하나?"** 를 항상 `IsServer` / `IsOwner` 로 구분합니다.
+- 충돌을 "도착한 자리"에서만 보면, 서버가 한 프레임 0.1초 멈췄을 때 총알이 1.4m 를 건너뛰어 캐릭터를 **뚫고 지나갈** 수 있습니다. 그래서 이동할 경로 전체를 `SphereCast` 로 검사합니다. (7장)
+
+### PlayHitEffectRpc — "누가 받나"와 "누가 보낼 수 있나"는 다르다
+
+```csharp
+[Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
+public void PlayHitEffectRpc() { ... }
+```
+
+`SendTo` 는 **받는 사람**만 정합니다. 기본 권한은 `Everyone` 이라서, `InvokePermission = Server` 를 빼먹으면 조작된 클라이언트가 이 RPC 를 직접 호출해 **가짜 피격 연출을 모두에게 뿌릴 수** 있습니다. 서버 → 모두 방향의 RPC 에는 항상 `Server` 권한을 붙이세요.
 
 ### ChatSystem.cs — 보낸 사람은 서버가 붙인다
 
@@ -120,11 +137,12 @@ void SendChatRpc(string text, RpcParams rpcParams = default)
     ReceiveChatRpc($"{name}: {text}");
 }
 
-[Rpc(SendTo.ClientsAndHost)]
+[Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)] // 서버만 뿌릴 수 있다
 void ReceiveChatRpc(string line) { m_Lines.Add(line); }
 ```
 
-- 클라이언트가 `"영희: 바보"` 라고 보내도 앞에 진짜 이름 `"철수: "` 가 붙습니다. **사칭 불가**.
+- 클라이언트가 `"영희: 바보"` 라고 보내도 앞에 그 **연결의 이름** `"철수: "` 가 붙습니다. 다른 접속자 명의로 보낼 수 없습니다.
+- 단, 이름 자체는 접속할 때 클라이언트가 고른 값입니다. 진짜 신원 확인(로그인)이 아니므로, 서버는 겹치는 이름에 번호를 붙여 구분만 합니다(`ConnectionHud.ApproveConnection`).
 - `RpcParams` 를 마지막 인자로 넣으면 보낸 사람 같은 부가 정보를 받을 수 있습니다.
 - 채팅 오브젝트의 주인은 서버이므로, 기본 권한(`Everyone`)으로 둬야 모든 클라이언트가 호출할 수 있습니다.
 
@@ -156,7 +174,7 @@ void ReceiveChatRpc(string line) { m_Lines.Add(line); }
 
 <details><summary>퀴즈: 왜 채팅 메시지에 붙는 이름을 클라이언트가 아니라 서버가 붙일까요?</summary>
 
-클라이언트는 조작될 수 있기 때문입니다. 서버는 `SenderClientId` 로 진짜 보낸 사람을 알고 있으므로 이름 사칭을 막을 수 있습니다.
+클라이언트는 조작될 수 있기 때문입니다. 서버는 `SenderClientId` 로 **어느 연결이 보냈는지** 알고 있으므로, 다른 접속자 명의로 보내는 것을 막을 수 있습니다. (이름이 진짜 그 사람인지 확인하려면 6장 같은 로그인 서비스가 필요합니다.)
 </details>
 
 ⬅️ 이전: [02. 플레이어 생성과 이동 동기화](02-player-sync.md) · ➡️ 다음: [04. NetworkVariable — 체력과 이름](04-network-variable.md)

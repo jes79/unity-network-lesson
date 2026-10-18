@@ -133,7 +133,7 @@ Host 는 서버이자 주인이라 `IsOwner` 와 `IsServer` 가 **둘 다 true**
 
 ## 4. 직접 해 볼 것
 
-1. `PlayerMovement.Update()` 의 `if (IsOwner)` 를 지우고 실행해 보세요. 무슨 일이 생기나요? (내 키보드 입력이 **모든 캐릭터** 이름으로 서버에 가지만, 서버는 `InvokePermission = Owner` 때문에 주인이 아닌 요청을 버립니다. 서버 콘솔 로그를 확인해 보세요.)
+1. `PlayerMovement.Update()` 의 `if (IsOwner)` 를 지우고 실행해 보세요. 무슨 일이 생기나요? (남의 캐릭터에서도 `SubmitInputRpc` 를 부르게 되는데, NGO 는 `InvokePermission = Owner` 를 보고 **내 프로그램에서 보내기 전에 예외**를 냅니다. 콘솔 오류를 확인해 보세요. 조작된 클라이언트가 이 검사를 지우고 억지로 보내더라도, **받는 서버 쪽에서도** 주인이 아닌 요청을 버립니다 — 두 겹의 검사입니다.)
 2. 클라이언트에서 `transform.position` 을 직접 바꿔 보세요(예: `if (IsOwner) transform.position += Vector3.forward;`). 다른 창에서도 보이나요? 왜 서버가 되돌려 놓을까요?
 3. `NetworkTransform.AuthorityMode` 를 `Owner` 로 바꾸고, 주인이 직접 위치를 움직이도록 고쳐 보세요. 반응은 빨라지지만 무엇을 잃었나요?
 4. `SyncPositionY` 를 다시 켜고 캐릭터를 점프시켜 보세요.

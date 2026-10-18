@@ -5,8 +5,8 @@ $project = Split-Path $PSScriptRoot -Parent
 $log = Join-Path $project "Builds\build.log"
 New-Item -ItemType Directory -Force (Split-Path $log) | Out-Null
 $p = Start-Process -FilePath $Unity -Wait -PassThru -ArgumentList @(
-    '-batchmode', '-projectPath', $project,
+    '-batchmode', '-projectPath', "`"$project`"",   # 경로에 공백이 있어도 되도록 따옴표로 감싼다
     '-executeMethod', 'Lesson.EditorTools.LessonSceneBuilder.BuildWindowsPlayer',
-    '-logFile', $log)
+    '-logFile', "`"$log`"")
 Select-String -Path $log -Pattern 'error CS|\[Lesson\]' | ForEach-Object { $_.Line }
 exit $p.ExitCode

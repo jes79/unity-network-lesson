@@ -72,7 +72,10 @@ namespace Lesson
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
         void SubmitInputRpc(Vector2 input)
         {
-            // 서버는 클라이언트를 믿지 않는다: 길이가 1을 넘는 "과속 입력"은 잘라낸다.
+            // 서버는 클라이언트를 믿지 않는다:
+            //   NaN/무한대 같은 "숫자가 아닌 값"은 버리고 (위치가 망가져 모두에게 퍼진다)
+            //   길이가 1을 넘는 "과속 입력"은 잘라낸다.
+            if (!float.IsFinite(input.x) || !float.IsFinite(input.y)) return;
             m_ServerInput = Vector2.ClampMagnitude(input, 1f);
         }
 

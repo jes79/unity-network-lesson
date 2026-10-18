@@ -127,4 +127,4 @@ m_Session = await MultiplayerService.Instance.JoinSessionByCodeAsync(m_JoinCode)
 | 씬 전환 | `NetworkManager.SceneManager.LoadScene` 으로 모두 함께 맵 이동 |
 | 분산 권한 (Distributed Authority) | NGO 2.x 의 새 구조. 서버 없이 클라이언트들이 오브젝트 권한을 나눠 가짐 |
 
-⬅️ 이전: [05. 지연과 싸우기](05-latency.md) · 🏠 [처음으로](../README.md)
+⬅️ 이전: [05. 지연과 싸우기](05-latency.md) · ➡️ 다음: [07. 코드 리뷰로 배우는 네트워크 보안·정확성](07-code-review.md) · 🏠 [처음으로](../README.md)

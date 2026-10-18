@@ -91,8 +91,8 @@ namespace Lesson.EditorTools
             var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             go.name = "Projectile";
             go.transform.localScale = Vector3.one * 0.35f;
-            go.GetComponent<Collider>().isTrigger = true;
-            go.AddComponent<Rigidbody>().isKinematic = true; // 트리거 충돌 이벤트를 받기 위해 필요
+            // 충돌은 서버가 SphereCast 로 직접 검사하므로(Projectile.Update) 콜라이더가 필요 없다
+            Object.DestroyImmediate(go.GetComponent<Collider>());
             go.AddComponent<NetworkObject>();
             var nt = go.AddComponent<NetworkTransform>();
             nt.AuthorityMode = NetworkTransform.AuthorityModes.Server;

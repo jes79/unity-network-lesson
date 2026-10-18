@@ -18,7 +18,7 @@ New-Item -ItemType Directory -Force $logs | Out-Null
 Remove-Item (Join-Path $logs "*.log") -ErrorAction SilentlyContinue
 
 function Launch([string[]]$extra, [string]$name, [int]$quit) {
-    $a = @('-port', '7777', '-logFile', (Join-Path $logs "$name.log")) + $extra
+    $a = @('-port', '7777', '-logFile', "`"$(Join-Path $logs "$name.log")`"") + $extra # 공백 있는 경로 대비
     if ($Headless) { $a += @('-batchmode', '-nographics') }
     if ($quit -gt 0) { $a += @('-quitAfter', "$quit") }
     if ($Bot) { $a += @('-report'); if ($name -ne 'server') { $a += @('-bot') } }
@@ -28,10 +28,11 @@ function Launch([string[]]$extra, [string]$name, [int]$quit) {
 
 $procs = @(Launch @('-mode', $Mode, '-name', 'HostPlayer') 'server' ($(if ($Seconds) { $Seconds + 4 } else { 0 })))
 Start-Sleep 3
-1..$Clients | ForEach-Object { $procs += Launch @('-mode', 'client', '-ip', '127.0.0.1', '-name', "Client$_") "client$_" $Seconds }
+for ($i = 1; $i -le $Clients; $i++) { $procs += Launch @('-mode', 'client', '-ip', '127.0.0.1', '-name', "Client$i") "client$i" $Seconds }
 if ($LateJoinAfter -gt 0) {
     Start-Sleep $LateJoinAfter
-    $procs += Launch @('-mode', 'client', '-ip', '127.0.0.1', '-name', 'Latecomer') 'late' ([Math]::Max(1, $Seconds - $LateJoinAfter))
+    $lateQuit = if ($Seconds -gt 0) { [Math]::Max(1, $Seconds - $LateJoinAfter) } else { 0 } # 0 = 자동 종료 안 함
+    $procs += Launch @('-mode', 'client', '-ip', '127.0.0.1', '-name', 'Latecomer') 'late' $lateQuit
 }
 
 if ($Seconds -gt 0) {

@@ -44,6 +44,9 @@ namespace Lesson
         readonly List<PendingInput> m_Pending = new();
         Transform m_Ghost;
 
+        // 서버·주인: 마지막으로 받아들인 입력 방향 (캐릭터가 바라보는 방향)
+        Vector3 m_Facing = Vector3.forward;
+
         // 서버 전용
         Vector3 m_ServerPos;
         int m_LastProcessed;
@@ -93,7 +96,8 @@ namespace Lesson
 
         void OnTick()
         {
-            if (IsOwner)
+            // 죽어 있는 동안은 입력을 만들지도, 보내지도 않는다. (서버도 무시하므로 예측·재적용과 규칙이 같아진다)
+            if (IsOwner && !m_Stats.IsDead.Value)
             {
                 var input = LessonInput.Move();
                 int seq = ++m_NextSeq;
@@ -101,7 +105,8 @@ namespace Lesson
                 {
                     m_Pending.Add(new PendingInput { Seq = seq, Move = input });
                     if (m_Pending.Count > 120) m_Pending.RemoveAt(0);
-                    if (LatencyLab.Prediction && !m_Stats.IsDead.Value)
+                    if (input.sqrMagnitude > 0.01f) m_Facing = new Vector3(input.x, 0, input.y);
+                    if (LatencyLab.Prediction)
                         m_Predicted = Simulate(m_Predicted, input); // ① 예측: 기다리지 않고 먼저 움직인다
                 }
                 SubmitInputRpc(seq, input);
@@ -127,17 +132,20 @@ namespace Lesson
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner, Delivery = RpcDelivery.Unreliable)]
         void SubmitInputRpc(int seq, Vector2 input)
         {
+            if (!float.IsFinite(input.x) || !float.IsFinite(input.y)) return; // NaN·무한대 입력은 위치를 망가뜨린다
             if (seq <= m_LastProcessed) return; // 늦게 도착한 옛 입력은 버림 (순서 뒤바뀜)
             m_LastProcessed = seq;
             if (m_Stats.IsDead.Value || m_InputBudget <= 0) return; // 죽었거나, 너무 많이 보내면 무시
             m_InputBudget--;
             m_ServerPos = Simulate(m_ServerPos, input);
+            if (input.sqrMagnitude > 0.01f) m_Facing = new Vector3(input.x, 0, input.y); // 서버가 쏘는 방향 = 입력 방향
         }
 
         /// <summary>서버 전용: 부활 등 순간이동</summary>
         public void ServerTeleport(Vector3 position)
         {
             m_ServerPos = position;
+            transform.position = position; // 콜라이더가 다시 켜지기 전에 실제 위치도 즉시 옮긴다 (죽은 자리에서 맞지 않게)
             var state = m_State.Value;
             state.Position = position;
             state.TeleportCount++;
@@ -154,7 +162,13 @@ namespace Lesson
             {
                 m_Pending.RemoveAll(p => p.Seq <= current.LastProcessedInput); // 서버가 처리한 입력은 버린다
 
-                if (!LatencyLab.Prediction || current.TeleportCount != previous.TeleportCount)
+                if (current.TeleportCount != previous.TeleportCount)
+                {
+                    m_Pending.Clear(); // 순간이동 전의 입력은 새 위치에 다시 적용하면 안 된다
+                    m_Predicted = current.Position;
+                    return;
+                }
+                if (!LatencyLab.Prediction)
                 {
                     m_Predicted = current.Position; // 예측을 안 하면 서버 위치를 그대로 쓴다 (2장과 같은 느낌)
                     return;
@@ -186,9 +200,10 @@ namespace Lesson
             else if (IsOwner) transform.position = m_Predicted;
             else transform.position = LatencyLab.Interpolation ? Interpolated() : m_State.Value.Position;
 
-            Vector3 delta = transform.position - before;
-            delta.y = 0;
-            if (delta.sqrMagnitude > 0.00001f) transform.rotation = Quaternion.LookRotation(delta);
+            // 바라보는 방향: 서버·주인은 "입력 방향"(보정으로 뒤로 튀어도 돌아서지 않게), 남들은 화면상 이동 방향
+            Vector3 facing = IsServer || IsOwner ? m_Facing : transform.position - before;
+            facing.y = 0;
+            if (facing.sqrMagnitude > 0.00001f) transform.rotation = Quaternion.LookRotation(facing);
 
             if (m_Ghost != null)
             {

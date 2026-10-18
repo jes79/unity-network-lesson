@@ -19,10 +19,13 @@
 | 04 | [NetworkVariable — 체력과 이름](docs/04-network-variable.md) | 상태 동기화, 쓰기 권한, 늦은 참가, OnValueChanged | `ch04` |
 | 05 | [지연과 싸우기](docs/05-latency.md) | 지연 시뮬레이션, 보간, 클라이언트 예측, 서버 보정 | `ch05` |
 | 06 | [인터넷 너머로](docs/06-relay.md) | NAT, Relay, 세션과 참가 코드 | `ch06` |
+| 07 | [코드 리뷰로 배우는 보안·정확성](docs/07-code-review.md) | RPC 권한, 입력 검증(NaN), 연속 충돌, 예측 규칙 일치 | `ch07` |
 
 ## 공부하는 방법
 
 각 장의 코드는 **Git 태그**로 저장되어 있습니다. 그 장까지 만든 상태로 돌아가 볼 수 있습니다.
+
+> 태그는 "그 장을 처음 만든 순간"의 기록입니다. 7장의 리뷰 수정은 `ch07`(= `main`)에만 들어 있고, 문서(`docs/`)는 항상 `main` 의 최신본을 보세요. 옛 태그에서는 아직 없는 다음 장 링크가 열리지 않을 수 있습니다.
 
 ```bash
 git clone https://github.com/jes79/unity-network-lesson.git

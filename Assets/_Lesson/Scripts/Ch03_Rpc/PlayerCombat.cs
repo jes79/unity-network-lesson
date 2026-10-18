@@ -47,7 +47,8 @@ namespace Lesson
         }
 
         /// <summary>서버가 "맞았다"는 사건을 모두에게 알린다. 실제 판정은 이미 서버에서 끝났다.</summary>
-        [Rpc(SendTo.ClientsAndHost)]
+        // InvokePermission.Server: 서버만 호출 가능. (기본값 Everyone 이면 클라이언트가 가짜 피격 연출을 뿌릴 수 있다)
+        [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
         public void PlayHitEffectRpc()
         {
             if (gameObject.activeInHierarchy) StartCoroutine(Flash());

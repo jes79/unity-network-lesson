@@ -27,6 +27,9 @@ namespace Lesson
         /// <summary>화면에 입력한 내 이름 (6장: 세션 접속 때도 사용)</summary>
         public string PlayerName => playerName;
 
+        /// <summary>6장: 인터넷 방(세션) 작업이 진행 중이거나 세션 안에 있으면 true → 직접 접속 버튼을 막는다</summary>
+        public static bool SessionBusy;
+
         /// <summary>서버만 채우는 표: 클라이언트 번호 → 접속할 때 보낸 이름. (4장에서 이름 표시에 사용)</summary>
         public static readonly Dictionary<ulong, string> ApprovedNames = new();
 
@@ -89,6 +92,8 @@ namespace Lesson
         {
             string requestedName = Encoding.UTF8.GetString(request.Payload);
             if (string.IsNullOrWhiteSpace(requestedName)) requestedName = $"Player{request.ClientNetworkId}";
+            // 이름은 클라이언트가 정해 보낸 값이라 남과 같을 수 있다 → 겹치면 번호를 붙여 구분한다
+            if (ApprovedNames.ContainsValue(requestedName)) requestedName += $"#{request.ClientNetworkId}";
 
             bool full = m_Net.ConnectedClientsIds.Count >= maxPlayers;
             response.Approved = !full;
@@ -127,6 +132,7 @@ namespace Lesson
         void OnGUI()
         {
             GUILayout.BeginArea(new Rect(10, 10, 330, 255), GUI.skin.box);
+            GUI.enabled = !SessionBusy;
             if (!m_Net.IsClient && !m_Net.IsServer)
             {
                 GUILayout.Label("IP 주소"); address = GUILayout.TextField(address);
@@ -150,6 +156,8 @@ namespace Lesson
                     Log("연결을 종료했습니다");
                 }
             }
+            GUI.enabled = true;
+            if (SessionBusy) GUILayout.Label("인터넷 방 사용 중 — 종료는 '방 나가기'로");
             GUILayout.EndArea();
 
             GUILayout.BeginArea(new Rect(10, Screen.height - 230, 480, 220), GUI.skin.box);

@@ -47,7 +47,9 @@ namespace Lesson
             ReceiveChatRpc(line);
         }
 
-        [Rpc(SendTo.ClientsAndHost)]
+        // SendTo 는 "누가 받는가"일 뿐, "누가 보낼 수 있는가"는 InvokePermission 이 정한다.
+        // Server 로 막지 않으면 조작된 클라이언트가 SendChatRpc 를 건너뛰고 가짜 채팅을 모두에게 직접 뿌릴 수 있다.
+        [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
         void ReceiveChatRpc(string line)
         {
             m_Lines.Add(line);

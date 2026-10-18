@@ -49,6 +49,7 @@ namespace Lesson
 
         async void CreateRoom() => await Run("방 만드는 중…", async () =>
         {
+            if (NetworkManager.Singleton.IsListening) throw new InvalidOperationException("이미 직접 접속(1장 방식) 중입니다");
             var options = new SessionOptions { MaxPlayers = maxPlayers }.WithRelayNetwork(); // Relay 사용
             m_Session = await MultiplayerService.Instance.CreateSessionAsync(options);
             m_Status = $"방 코드: {m_Session.Code}   (친구에게 알려 주세요)";
@@ -56,6 +57,7 @@ namespace Lesson
 
         async void JoinRoom() => await Run("참가하는 중…", async () =>
         {
+            if (NetworkManager.Singleton.IsListening) throw new InvalidOperationException("이미 직접 접속(1장 방식) 중입니다");
             m_Session = await MultiplayerService.Instance.JoinSessionByCodeAsync(m_JoinCode.Trim().ToUpperInvariant());
             m_Status = $"참가 완료: {m_Session.Code}";
         });
@@ -71,6 +73,7 @@ namespace Lesson
         {
             if (m_Busy) return;
             m_Busy = true;
+            ConnectionHud.SessionBusy = true; // 진행 중에는 1장의 직접 접속 버튼을 막는다 (두 방식이 섞이지 않게)
             m_Status = busyText;
             try
             {
@@ -85,6 +88,7 @@ namespace Lesson
             finally
             {
                 m_Busy = false;
+                ConnectionHud.SessionBusy = m_Session != null; // 세션 안에 있는 동안에도 계속 막는다
                 ConnectionHud.Log(m_Status);
             }
         }
