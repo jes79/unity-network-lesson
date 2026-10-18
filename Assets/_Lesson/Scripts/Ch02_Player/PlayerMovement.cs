@@ -20,14 +20,17 @@ namespace Lesson
 
         Vector2 m_ServerInput;   // 서버에서만 의미 있음: 이 플레이어가 마지막으로 보낸 입력
         Vector2 m_LastSentInput; // 주인에서만 의미 있음: 마지막으로 보낸 입력 (같은 값을 매 프레임 보내지 않기 위해)
+        PlayerStats m_Stats;
+
+        void Awake() => m_Stats = GetComponent<PlayerStats>();
 
         public override void OnNetworkSpawn()
         {
             // 시작 위치는 서버가 정한다. NetworkTransform 이 이 값을 모두에게 전달한다.
             if (IsServer) transform.position = SpawnPoint(OwnerClientId);
 
-            // 색깔은 동기화하지 않는다. 모두가 알고 있는 OwnerClientId 로 "각자 계산"하면 결과가 같기 때문.
-            GetComponent<Renderer>().material.color = ColorFor(OwnerClientId);
+            // 2장에서는 색을 여기서 OwnerClientId 로 "각자 계산"했다 (동기화 불필요).
+            // 4장부터는 플레이어가 색을 고를 수 있으므로 계산이 아니라 동기화가 필요 → PlayerStats.ColorIndex
 
             ConnectionHud.Log($"플레이어 생성: 주인 #{OwnerClientId}  IsOwner={IsOwner}  IsServer={IsServer}");
         }
@@ -47,8 +50,8 @@ namespace Lesson
                 }
             }
 
-            // ② 서버: 진짜 위치 계산
-            if (IsServer)
+            // ② 서버: 진짜 위치 계산 (4장: 죽어 있으면 움직이지 않음)
+            if (IsServer && !m_Stats.IsDead.Value)
             {
                 var move = new Vector3(m_ServerInput.x, 0, m_ServerInput.y);
                 var pos = transform.position + move * (speed * Time.deltaTime);

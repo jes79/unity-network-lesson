@@ -20,8 +20,13 @@ namespace Lesson
 
         float m_NextFireTime; // 서버에서만 사용
         Renderer m_Renderer;
+        PlayerStats m_Stats;
 
-        void Awake() => m_Renderer = GetComponent<Renderer>();
+        void Awake()
+        {
+            m_Renderer = GetComponent<Renderer>();
+            m_Stats = GetComponent<PlayerStats>();
+        }
 
         void Update()
         {
@@ -32,7 +37,7 @@ namespace Lesson
         void FireRpc()
         {
             // 쿨타임은 서버가 검사한다. 클라이언트가 연사 핵을 써도 서버가 무시한다.
-            if (Time.time < m_NextFireTime) return;
+            if (Time.time < m_NextFireTime || m_Stats.IsDead.Value) return;
             m_NextFireTime = Time.time + fireCooldown;
 
             var spawnPos = transform.position + transform.forward * 0.9f;
@@ -50,10 +55,9 @@ namespace Lesson
 
         IEnumerator Flash()
         {
-            var original = PlayerMovement.ColorFor(OwnerClientId);
             m_Renderer.material.color = Color.white;
             yield return new WaitForSeconds(0.12f);
-            m_Renderer.material.color = original;
+            m_Renderer.material.color = m_Stats.CurrentColor;
         }
     }
 }

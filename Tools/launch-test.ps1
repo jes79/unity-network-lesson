@@ -7,7 +7,8 @@ param(
     [int]$Seconds = 0,          # 0 이면 자동 종료하지 않음
     [string]$Mode = "server",   # server | host
     [switch]$Headless,
-    [switch]$Bot                # 클라이언트를 자동 입력(-bot)으로 움직이고, 모두 -report 로 오브젝트 위치를 기록
+    [switch]$Bot,               # 클라이언트를 자동 입력(-bot)으로 움직이고, 모두 -report 로 오브젝트 위치를 기록
+    [int]$LateJoinAfter = 0     # N초 뒤에 클라이언트 하나를 더 접속 (4장: 늦게 들어온 사람이 무엇을 받는지 확인)
 )
 $project = Split-Path $PSScriptRoot -Parent
 $exe = Join-Path $project "Builds\Win\UnityNetworkLesson.exe"
@@ -26,6 +27,10 @@ function Launch([string[]]$extra, [string]$name, [int]$quit) {
 $procs = @(Launch @('-mode', $Mode, '-name', 'HostPlayer') 'server' ($(if ($Seconds) { $Seconds + 4 } else { 0 })))
 Start-Sleep 3
 1..$Clients | ForEach-Object { $procs += Launch @('-mode', 'client', '-ip', '127.0.0.1', '-name', "Client$_") "client$_" $Seconds }
+if ($LateJoinAfter -gt 0) {
+    Start-Sleep $LateJoinAfter
+    $procs += Launch @('-mode', 'client', '-ip', '127.0.0.1', '-name', 'Latecomer') 'late' ([Math]::Max(1, $Seconds - $LateJoinAfter))
+}
 
 if ($Seconds -gt 0) {
     $procs | ForEach-Object { $_.WaitForExit(($Seconds + 20) * 1000) | Out-Null }

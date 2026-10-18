@@ -11,6 +11,7 @@ namespace Lesson
     {
         [SerializeField] float speed = 14f;
         [SerializeField] float lifeTime = 1.5f;
+        const int Damage = 25;
 
         /// <summary>누가 쐈는지 (서버에서만 사용 — 자기 총알에 맞지 않게)</summary>
         public ulong ShooterClientId;
@@ -33,7 +34,8 @@ namespace Lesson
             if (target.OwnerClientId == ShooterClientId) return;
 
             ConnectionHud.Log($"명중! #{ShooterClientId} → #{target.OwnerClientId}");
-            target.PlayHitEffectRpc();
+            target.PlayHitEffectRpc();                                          // 사건(연출) → RPC
+            target.GetComponent<PlayerStats>().TakeDamage(Damage, ShooterClientId); // 상태(체력) → NetworkVariable (4장)
             NetworkObject.Despawn();
         }
     }

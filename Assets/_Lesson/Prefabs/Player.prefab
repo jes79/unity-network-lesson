@@ -106,6 +106,7 @@ GameObject:
   - component: {fileID: 6711346045811013335}
   - component: {fileID: 3809743978940650632}
   - component: {fileID: 249993452415862286}
+  - component: {fileID: 2092627865537803090}
   - component: {fileID: 23858292752954626}
   m_Layer: 0
   m_Name: Player
@@ -310,6 +311,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Lesson.PlayerLabel
   ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &2092627865537803090
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8925315078930259208}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dc636130ace4b745b8df7a13489fb09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Lesson.PlayerStats
+  ShowTopMostFoldoutHeaderGroup: 1
+  respawnDelay: 3
 --- !u!114 &23858292752954626
 MonoBehaviour:
   m_ObjectHideFlags: 0

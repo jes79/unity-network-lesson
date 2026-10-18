@@ -119,6 +119,7 @@ namespace Lesson.EditorTools
 
             go.AddComponent<PlayerMovement>();
             go.AddComponent<PlayerLabel>();
+            go.AddComponent<PlayerStats>(); // [4장]
 
             var combat = go.AddComponent<PlayerCombat>(); // [3장]
             var so = new SerializedObject(combat);

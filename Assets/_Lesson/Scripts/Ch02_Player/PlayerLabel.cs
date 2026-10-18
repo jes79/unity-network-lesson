@@ -8,7 +8,14 @@ namespace Lesson
     /// </summary>
     public class PlayerLabel : NetworkBehaviour
     {
-        string Text => $"#{OwnerClientId}{(IsOwner ? " (나)" : "")}";
+        PlayerStats m_Stats;
+
+        void Awake() => m_Stats = GetComponent<PlayerStats>();
+
+        // 4장: 이름·체력·처치 수는 모두 NetworkVariable 값을 그대로 읽어 그린다.
+        string Text => m_Stats.IsDead.Value
+            ? $"{m_Stats.PlayerName.Value}\n리스폰 대기…"
+            : $"{m_Stats.PlayerName.Value}{(IsOwner ? " (나)" : "")}\nHP {m_Stats.Health.Value}  처치 {m_Stats.Kills.Value}";
 
         void OnGUI()
         {
