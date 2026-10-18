@@ -1,4 +1,4 @@
-# 빌드한 게임을 서버 1개 + 클라이언트 여러 개로 한 번에 띄웁니다.
+﻿# 빌드한 게임을 서버 1개 + 클라이언트 여러 개로 한 번에 띄웁니다.
 #   창으로 보기:     powershell -ExecutionPolicy Bypass -File Tools/launch-test.ps1
 #   화면 없이 검사:  powershell -ExecutionPolicy Bypass -File Tools/launch-test.ps1 -Headless -Seconds 15
 #   -Mode host 로 바꾸면 첫 창이 Host(서버+플레이어)가 됩니다.

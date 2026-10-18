@@ -1,4 +1,4 @@
-# 씬을 다시 만들고 Windows 실행 파일을 Builds/Win 에 빌드합니다.
+﻿# 씬을 다시 만들고 Windows 실행 파일을 Builds/Win 에 빌드합니다.
 #   사용법:  powershell -ExecutionPolicy Bypass -File Tools/build.ps1
 param([string]$Unity = "C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe")
 $project = Split-Path $PSScriptRoot -Parent
