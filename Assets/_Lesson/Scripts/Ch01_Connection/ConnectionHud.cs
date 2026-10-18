@@ -24,6 +24,9 @@ namespace Lesson
         [SerializeField] string playerName = "Player";
         [SerializeField] int maxPlayers = 4;
 
+        /// <summary>화면에 입력한 내 이름 (6장: 세션 접속 때도 사용)</summary>
+        public string PlayerName => playerName;
+
         /// <summary>서버만 채우는 표: 클라이언트 번호 → 접속할 때 보낸 이름. (4장에서 이름 표시에 사용)</summary>
         public static readonly Dictionary<ulong, string> ApprovedNames = new();
 
@@ -123,7 +126,7 @@ namespace Lesson
 
         void OnGUI()
         {
-            GUILayout.BeginArea(new Rect(10, 10, 330, 400), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(10, 10, 330, 255), GUI.skin.box);
             if (!m_Net.IsClient && !m_Net.IsServer)
             {
                 GUILayout.Label("IP 주소"); address = GUILayout.TextField(address);

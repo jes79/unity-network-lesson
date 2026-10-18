@@ -72,6 +72,7 @@ namespace Lesson.EditorTools
             hud.AddComponent<ConnectionHud>();
             hud.AddComponent<CommandLineStarter>();
             hud.AddComponent<SpawnedObjectsReport>();
+            hud.AddComponent<SessionHud>(); // [6장] Relay 세션
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
