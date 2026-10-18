@@ -20,6 +20,9 @@ namespace Lesson
             string mode = GetArg("-mode");
             if (mode == null) yield break; // 옵션이 없으면 평소처럼 버튼으로 시작
 
+            // 화면 없는 서버가 1초에 수천 번 돌며 CPU 를 다 쓰지 않도록 제한
+            Application.targetFrameRate = 60;
+
             // 한 프레임 기다려서 ConnectionHud.Start(콜백 등록)가 먼저 끝나게 합니다.
             yield return null;
 

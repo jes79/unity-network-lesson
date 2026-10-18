@@ -43,12 +43,21 @@ namespace Lesson.EditorTools
 
             // ── [2장] 플레이어 프리팹: 접속이 승인되면 서버가 클라이언트마다 하나씩 만들어 준다.
             Directory.CreateDirectory(Root + "/Prefabs");
-            net.NetworkConfig.PlayerPrefab = CreatePlayerPrefab();
+            var projectile = CreateProjectilePrefab(); // [3장]
+            net.NetworkConfig.PlayerPrefab = CreatePlayerPrefab(projectile);
 
             // 네트워크로 만들 수 있는 프리팹 목록. 서버와 클라이언트가 "같은 목록"을 가져야 한다.
             var prefabList = AssetDatabase.LoadAssetAtPath<NetworkPrefabsList>("Assets/DefaultNetworkPrefabs.asset");
+            if (!prefabList.Contains(projectile)) prefabList.Add(new NetworkPrefab { Prefab = projectile });
+            EditorUtility.SetDirty(prefabList);
             net.NetworkConfig.Prefabs.NetworkPrefabsLists.Clear();
             net.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(prefabList);
+
+            // ── [3장] 채팅: 씬에 미리 놓인 네트워크 오브젝트. 프리팹이 아니라 씬에 들어 있으므로 Spawn 하지 않아도
+            //          서버가 시작될 때 자동으로 네트워크에 등록된다. (주인 = 서버)
+            var chat = new GameObject("Chat");
+            chat.AddComponent<NetworkObject>();
+            chat.AddComponent<ChatSystem>();
 
             // ── 접속 화면
             var hud = new GameObject("ConnectionHud");
@@ -68,7 +77,24 @@ namespace Lesson.EditorTools
             Debug.Log("[Lesson] 씬 생성 완료: " + ScenePath);
         }
 
-        static GameObject CreatePlayerPrefab()
+        static GameObject CreateProjectilePrefab()
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            go.name = "Projectile";
+            go.transform.localScale = Vector3.one * 0.35f;
+            go.GetComponent<Collider>().isTrigger = true;
+            go.AddComponent<Rigidbody>().isKinematic = true; // 트리거 충돌 이벤트를 받기 위해 필요
+            go.AddComponent<NetworkObject>();
+            var nt = go.AddComponent<NetworkTransform>();
+            nt.AuthorityMode = NetworkTransform.AuthorityModes.Server;
+            nt.SyncPositionY = false;
+            nt.SyncRotAngleX = nt.SyncRotAngleY = nt.SyncRotAngleZ = false; // 공은 회전이 필요 없다
+            nt.SyncScaleX = nt.SyncScaleY = nt.SyncScaleZ = false;
+            go.AddComponent<Projectile>();
+            return SavePrefab(go, "Projectile");
+        }
+
+        static GameObject CreatePlayerPrefab(GameObject projectile)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             go.name = "Player";
@@ -93,6 +119,11 @@ namespace Lesson.EditorTools
 
             go.AddComponent<PlayerMovement>();
             go.AddComponent<PlayerLabel>();
+
+            var combat = go.AddComponent<PlayerCombat>(); // [3장]
+            var so = new SerializedObject(combat);
+            so.FindProperty("projectilePrefab").objectReferenceValue = projectile.GetComponent<NetworkObject>();
+            so.ApplyModifiedPropertiesWithoutUndo();
             return SavePrefab(go, "Player");
         }
 
